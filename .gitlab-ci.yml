@@ -1,0 +1,68 @@
+# Define the stages of the pipeline
+stages:
+  - build
+  - test
+  - scan
+  - deploy
+
+# Define variables for the pipeline
+variables:
+  # Securely using secrets (to be managed in GitLab CI/CD settings)
+  SECRET_KEY: $SECRET_KEY
+
+# Commands to run before any stage
+before_script:
+  - echo "Setting up the environment..."
+
+# Build stage
+build:
+  stage: build
+  script:
+    - echo "Building the Hello World application..."
+    # Create a simple Hello World file
+    - echo "Hello World" > hello_world.txt
+  artifacts:
+    # Save the Hello World file as an artifact
+    paths:
+      - hello_world.txt
+
+# Test stage
+test:
+  stage: test
+  script:
+    - echo "Running tests..."
+    # Simple test to check if the file content is "Hello World"
+    - if [ "$(cat hello_world.txt)" == "Hello World" ]; then echo "Test passed!"; else echo "Test failed!" && exit 1; fi
+
+# Scan stage
+scan:
+  stage: scan
+  script:
+    - echo "Scanning for vulnerabilities..."
+    # Simulate a scan result (replace with actual scan command)
+    - SCAN_RESULT="pass"
+    # Pass or fail the build based on the scan result
+    - if [ "$SCAN_RESULT" == "pass" ]; then echo "Scan passed!"; else echo "Scan failed!" && exit 1; fi
+
+# Deploy stage
+deploy:
+  stage: deploy
+  script:
+    - echo "Deploying the Hello World application..."
+    # Conditional deployment based on the branch name
+    - if [ "$CI_COMMIT_REF_NAME" == "main" ]; then
+        echo "Deploying to production...";
+      elif [ "$CI_COMMIT_REF_NAME" == "develop" ]; then
+        echo "Deploying to staging...";
+      elif [[ "$CI_COMMIT_REF_NAME" == feature/* ]]; then
+        echo "Deploying to feature environment...";
+      else
+        echo "Branch not configured for deployment" && exit 1;
+      fi
+  environment:
+    name: $CI_COMMIT_REF_NAME
+    url: https://$CI_COMMIT_REF_NAME.example.com
+  only:
+    - main
+    - develop
+    - feature/*
